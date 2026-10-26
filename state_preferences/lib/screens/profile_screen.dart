@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-
-import '../providers/user_provider.dart';
-
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../models/user.dart';
+import '../providers/user_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -45,24 +46,82 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate()) return;
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
 
-    final provider = context.read<UserProvider>();
+    // Validasi input kosong
+    if (name.isEmpty || email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nama dan email wajib diisi!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    final updatedUser = provider.user.copyWith(
-      name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      isLoggedIn: true,
+    // Validasi format email
+    final emailRegex = RegExp(r'^[\w.-]+@([\w-]+\.)+[\w-]{2,}$');
+
+    if (!emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Format email tidak valid!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validasi nama dari karakter atau tag berbahaya
+    final dangerousPattern = RegExp(
+      r'<\s*/?\s*script\b[^>]*>|<[^>]*>',
+      caseSensitive: false,
     );
 
+    if (dangerousPattern.hasMatch(name)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Nama tidak boleh mengandung karakter atau tag berbahaya!',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validasi email yang sudah digunakan
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString('user_email');
+
+    final currentEmail = context.read<UserProvider>().user.email.trim();
+
+    if (savedEmail != null &&
+        savedEmail.toLowerCase() == email.toLowerCase() &&
+        email.toLowerCase() != currentEmail.toLowerCase()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Email sudah digunakan! Gunakan email lain.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Simpan profil melalui Provider
     try {
+      final currentUser = context.read<UserProvider>().user;
+
+      final updatedUser = currentUser.copyWith(name: name, email: email);
+
       await context.read<UserProvider>().updateUser(updatedUser);
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Profil berhasil disimpan'),
+          content: Text('Profil berhasil diperbarui!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -71,7 +130,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Gagal menyimpan profil'),
+          content: Text('Gagal menyimpan profil. Silakan coba lagi.'),
           backgroundColor: Colors.red,
         ),
       );
