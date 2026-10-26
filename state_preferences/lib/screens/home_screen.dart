@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../providers/user_provider.dart';
 import 'profile_screen.dart';
@@ -8,7 +9,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = UserProvider.of(context);
+    final provider = context.watch<UserProvider>();
 
     return Scaffold(
       appBar: AppBar(
@@ -23,8 +24,8 @@ class HomeScreen extends StatelessWidget {
             icon: Icon(
               provider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
             ),
-            onPressed: () async {
-              await provider.toggleTheme();
+            onPressed: () {
+              context.read<UserProvider>().toggleTheme();
             },
           ),
         ],
@@ -33,14 +34,13 @@ class HomeScreen extends StatelessWidget {
           ? const Center(child: CircularProgressIndicator())
           : Center(
               child: Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(Icons.home, size: 80, color: Colors.deepPurple),
                     const SizedBox(height: 24),
 
-                    // Pesan berdasarkan status login
                     Text(
                       provider.user.isLoggedIn
                           ? 'Selamat datang, ${provider.user.name}!'
@@ -83,7 +83,6 @@ class HomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    // Tampilan untuk pengguna yang sudah login
                     if (provider.user.isLoggedIn) ...[
                       Text(
                         'Email: ${provider.user.email}',
@@ -99,7 +98,7 @@ class HomeScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const ProfileScreen(),
+                              builder: (_) => const ProfileScreen(),
                             ),
                           );
                         },
@@ -107,13 +106,12 @@ class HomeScreen extends StatelessWidget {
                         label: const Text('Lihat Profil'),
                       ),
                     ] else ...[
-                      // Tampilan untuk pengguna yang belum login
                       ElevatedButton.icon(
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const ProfileScreen(),
+                              builder: (_) => const ProfileScreen(),
                             ),
                           );
                         },

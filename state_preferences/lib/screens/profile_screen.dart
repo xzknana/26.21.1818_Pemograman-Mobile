@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../providers/user_provider.dart';
 
+import 'package:provider/provider.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -25,7 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (_controllersInitialized) return;
 
-    final provider = UserProvider.of(context);
+    final provider = context.read<UserProvider>();
 
     _nameController = TextEditingController(text: provider.user.name);
     _emailController = TextEditingController(text: provider.user.email);
@@ -45,7 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final provider = UserProvider.of(context);
+    final provider = context.read<UserProvider>();
 
     final updatedUser = provider.user.copyWith(
       name: _nameController.text.trim(),
@@ -54,7 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     try {
-      await provider.updateUser(updatedUser);
+      await context.read<UserProvider>().updateUser(updatedUser);
 
       if (!mounted) return;
 
@@ -79,7 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _addFavorite() async {
     if (!_favoriteFormKey.currentState!.validate()) return;
 
-    final provider = UserProvider.of(context);
+    final provider = context.read<UserProvider>();
     final item = _favoriteController.text.trim();
 
     final alreadyExists = provider.favorites.any(
@@ -94,7 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
-      await provider.addFavorite(item);
+      await context.read<UserProvider>().addFavorite(item);
 
       if (!mounted) return;
 
@@ -120,7 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _removeFavorite(String item) async {
     try {
-      await UserProvider.of(context).removeFavorite(item);
+      await context.read<UserProvider>().removeFavorite(item);
 
       if (!mounted) return;
 
@@ -154,7 +156,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.pop(dialogContext);
 
               try {
-                await UserProvider.of(context).logout();
+                await context.read<UserProvider>().logout();
 
                 if (!mounted) return;
 
@@ -179,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = UserProvider.of(context);
+    final provider = context.read<UserProvider>();
 
     return Scaffold(
       appBar: AppBar(
