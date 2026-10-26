@@ -8,6 +8,8 @@ class UserProvider extends InheritedWidget {
   final Future<void> Function(User) updateUser;
   final Future<void> Function() logout;
   final bool isLoading;
+  final bool isDarkMode;
+  final Future<void> Function() toggleTheme;
 
   const UserProvider({
     super.key,
@@ -15,6 +17,8 @@ class UserProvider extends InheritedWidget {
     required this.updateUser,
     required this.logout,
     required this.isLoading,
+    required this.isDarkMode,
+    required this.toggleTheme,
     required super.child,
   });
 
@@ -28,11 +32,12 @@ class UserProvider extends InheritedWidget {
 
   @override
   bool updateShouldNotify(UserProvider oldWidget) {
-    return oldWidget.user != user || oldWidget.isLoading != isLoading;
+    return oldWidget.user != user ||
+        oldWidget.isLoading != isLoading ||
+        oldWidget.isDarkMode != isDarkMode;
   }
 }
 
-// StatefulWidget yang membungkus InheritedWidget
 class UserProviderWrapper extends StatefulWidget {
   final Widget child;
 
@@ -45,6 +50,7 @@ class UserProviderWrapper extends StatefulWidget {
 class _UserProviderWrapperState extends State<UserProviderWrapper> {
   User _user = User(name: '', email: '');
   bool _isLoading = true;
+  bool _isDarkMode = false;
 
   @override
   void initState() {
@@ -52,7 +58,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
     _loadUser();
   }
 
-  // Memuat data user dari SharedPreferences
+  // Memuat data user dan preferensi tema.
   Future<void> _loadUser() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -60,11 +66,13 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
       final name = prefs.getString('user_name') ?? '';
       final email = prefs.getString('user_email') ?? '';
       final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+      final isDarkMode = prefs.getBool('is_dark_mode') ?? false;
 
       if (!mounted) return;
 
       setState(() {
         _user = User(name: name, email: email, isLoggedIn: isLoggedIn);
+        _isDarkMode = isDarkMode;
         _isLoading = false;
       });
     } catch (e) {
@@ -78,7 +86,25 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
     }
   }
 
-  // Menyimpan data user ke SharedPreferences
+  // Mengubah dan menyimpan preferensi tema.
+  Future<void> _toggleTheme() async {
+    final newValue = !_isDarkMode;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_dark_mode', newValue);
+
+      if (!mounted) return;
+
+      setState(() {
+        _isDarkMode = newValue;
+      });
+    } catch (e) {
+      debugPrint('Gagal menyimpan preferensi tema: $e');
+    }
+  }
+
+  // Menyimpan data user.
   Future<void> _updateUser(User newUser) async {
     setState(() {
       _isLoading = true;
@@ -109,7 +135,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
     }
   }
 
-  // Logout: hapus nama dan status login, email tetap disimpan
+  // Logout: menghapus nama dan status login, email tetap disimpan.
   Future<void> _logout() async {
     setState(() {
       _isLoading = true;
@@ -146,6 +172,8 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
       updateUser: _updateUser,
       logout: _logout,
       isLoading: _isLoading,
+      isDarkMode: _isDarkMode,
+      toggleTheme: _toggleTheme,
       child: widget.child,
     );
   }

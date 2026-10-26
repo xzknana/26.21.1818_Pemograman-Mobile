@@ -15,6 +15,19 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Home'),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            tooltip: provider.isDarkMode
+                ? 'Aktifkan Light Mode'
+                : 'Aktifkan Dark Mode',
+            icon: Icon(
+              provider.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+            ),
+            onPressed: () async {
+              await provider.toggleTheme();
+            },
+          ),
+        ],
       ),
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
