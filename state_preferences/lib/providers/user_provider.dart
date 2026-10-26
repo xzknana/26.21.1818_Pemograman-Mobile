@@ -11,6 +11,9 @@ class UserProvider extends InheritedWidget {
   final bool isDarkMode;
   final Future<void> Function() toggleTheme;
   final int visitCount;
+  final List<String> favorites;
+  final Future<void> Function(String) addFavorite;
+  final Future<void> Function(String) removeFavorite;
 
   const UserProvider({
     super.key,
@@ -22,6 +25,9 @@ class UserProvider extends InheritedWidget {
     required this.toggleTheme,
     required super.child,
     required this.visitCount,
+    required this.favorites,
+    required this.addFavorite,
+    required this.removeFavorite,
   });
 
   static UserProvider of(BuildContext context) {
@@ -37,7 +43,8 @@ class UserProvider extends InheritedWidget {
     return oldWidget.user != user ||
         oldWidget.isLoading != isLoading ||
         oldWidget.isDarkMode != isDarkMode ||
-        oldWidget.visitCount != visitCount;
+        oldWidget.visitCount != visitCount ||
+        oldWidget.favorites != favorites;
   }
 }
 
@@ -55,6 +62,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
   bool _isLoading = true;
   bool _isDarkMode = false;
   int _visitCount = 0;
+  List<String> _favorites = [];
 
   @override
   void initState() {
@@ -71,6 +79,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
       final email = prefs.getString('user_email') ?? '';
       final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
       final isDarkMode = prefs.getBool('is_dark_mode') ?? false;
+      final favorites = prefs.getStringList('favorites') ?? [];
 
       // Menghitung jumlah kunjungan aplikasi.
       final previousVisitCount = prefs.getInt('visit_count') ?? 0;
@@ -85,6 +94,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
         _isDarkMode = isDarkMode;
         _visitCount = newVisitCount;
         _isLoading = false;
+        _favorites = favorites;
       });
     } catch (e) {
       if (!mounted) return;
@@ -176,6 +186,46 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
     }
   }
 
+  Future<void> _addFavorite(String item) async {
+    final value = item.trim();
+
+    if (value.isEmpty) return;
+
+    // Hindari item duplikat.
+    if (_favorites.any(
+      (favorite) => favorite.toLowerCase() == value.toLowerCase(),
+    )) {
+      return;
+    }
+
+    final updatedFavorites = [..._favorites, value];
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setStringList('favorites', updatedFavorites);
+
+    if (!mounted) return;
+
+    setState(() {
+      _favorites = updatedFavorites;
+    });
+  }
+
+  Future<void> _removeFavorite(String item) async {
+    final updatedFavorites = _favorites
+        .where((favorite) => favorite != item)
+        .toList();
+
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setStringList('favorites', updatedFavorites);
+
+    if (!mounted) return;
+
+    setState(() {
+      _favorites = updatedFavorites;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return UserProvider(
@@ -186,6 +236,12 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
       isDarkMode: _isDarkMode,
       toggleTheme: _toggleTheme,
       visitCount: _visitCount,
+
+      // Fitur daftar favorit
+      favorites: _favorites,
+      addFavorite: _addFavorite,
+      removeFavorite: _removeFavorite,
+
       child: widget.child,
     );
   }
