@@ -54,6 +54,35 @@ class HomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.visibility),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('Kunjungan Aplikasi'),
+                                Text(
+                                  '${provider.visitCount} kali',
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
                     // Tampilan untuk pengguna yang sudah login
                     if (provider.user.isLoggedIn) ...[
                       Text(

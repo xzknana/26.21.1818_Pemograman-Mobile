@@ -10,6 +10,7 @@ class UserProvider extends InheritedWidget {
   final bool isLoading;
   final bool isDarkMode;
   final Future<void> Function() toggleTheme;
+  final int visitCount;
 
   const UserProvider({
     super.key,
@@ -20,6 +21,7 @@ class UserProvider extends InheritedWidget {
     required this.isDarkMode,
     required this.toggleTheme,
     required super.child,
+    required this.visitCount,
   });
 
   static UserProvider of(BuildContext context) {
@@ -34,7 +36,8 @@ class UserProvider extends InheritedWidget {
   bool updateShouldNotify(UserProvider oldWidget) {
     return oldWidget.user != user ||
         oldWidget.isLoading != isLoading ||
-        oldWidget.isDarkMode != isDarkMode;
+        oldWidget.isDarkMode != isDarkMode ||
+        oldWidget.visitCount != visitCount;
   }
 }
 
@@ -51,6 +54,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
   User _user = User(name: '', email: '');
   bool _isLoading = true;
   bool _isDarkMode = false;
+  int _visitCount = 0;
 
   @override
   void initState() {
@@ -68,11 +72,18 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
       final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
       final isDarkMode = prefs.getBool('is_dark_mode') ?? false;
 
+      // Menghitung jumlah kunjungan aplikasi.
+      final previousVisitCount = prefs.getInt('visit_count') ?? 0;
+      final newVisitCount = previousVisitCount + 1;
+
+      await prefs.setInt('visit_count', newVisitCount);
+
       if (!mounted) return;
 
       setState(() {
         _user = User(name: name, email: email, isLoggedIn: isLoggedIn);
         _isDarkMode = isDarkMode;
+        _visitCount = newVisitCount;
         _isLoading = false;
       });
     } catch (e) {
@@ -82,7 +93,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
         _isLoading = false;
       });
 
-      debugPrint('Gagal memuat data user: $e');
+      debugPrint('Gagal memuat data user atau counter: $e');
     }
   }
 
@@ -174,6 +185,7 @@ class _UserProviderWrapperState extends State<UserProviderWrapper> {
       isLoading: _isLoading,
       isDarkMode: _isDarkMode,
       toggleTheme: _toggleTheme,
+      visitCount: _visitCount,
       child: widget.child,
     );
   }
