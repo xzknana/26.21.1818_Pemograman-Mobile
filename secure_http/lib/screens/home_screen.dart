@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/secure_storage_service.dart';
+import 'login_screen.dart';
 import 'user_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -11,60 +12,41 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final SecureStorageService _storageService = SecureStorageService();
-  final TextEditingController _tokenController = TextEditingController();
-  String? _savedToken;
-  bool _hasToken = false;
+  bool _isLoggedIn = false;
+  bool _isChecking = true;
+
   @override
   void initState() {
     super.initState();
-    _checkToken();
+    _checkLoginStatus();
   }
 
-  @override
-  void dispose() {
-    _tokenController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _checkToken() async {
-    final hasToken = await _storageService.hasToken();
+  Future<void> _checkLoginStatus() async {
     final token = await _storageService.getToken();
+    if (!mounted) return;
     setState(() {
-      _hasToken = hasToken;
-      _savedToken = token;
+      _isLoggedIn = token != null && token.isNotEmpty;
+      _isChecking = false;
     });
   }
 
-  Future<void> _saveToken() async {
-    if (_tokenController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Token tidak boleh kosong'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-    await _storageService.saveToken(_tokenController.text.trim());
-    _tokenController.clear();
-    await _checkToken();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Token berhasil disimpan di secure storage'),
-          backgroundColor: Colors.green,
-        ),
-      );
+  Future<void> _goToLogin() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
+    if (result == true) {
+      await _checkLoginStatus();
     }
   }
 
-  Future<void> _deleteToken() async {
+  Future<void> _logout() async {
     await _storageService.deleteToken();
-    await _checkToken();
+    await _checkLoginStatus();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Token berhasil dihapus'),
+          content: Text('Logout berhasil, token dihapus'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -85,19 +67,19 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Section 1: Secure Storage
+              // Section 1: Status Login
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
-                          const Icon(Icons.lock, color: Colors.deepPurple),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Secure Storage',
+                          Icon(Icons.lock, color: Colors.deepPurple),
+                          SizedBox(width: 8),
+                          Text(
+                            'Status Login',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -107,67 +89,37 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Simpan token atau PIN di secure storage (terenkripsi AES).',
+                        'Token hasil login disimpan di secure storage (terenkripsi).',
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(height: 16),
-                      TextField(
-                        controller: _tokenController,
-                        decoration: const InputDecoration(
-                          labelText: 'Token',
-                          hintText: 'Masukkan token dummy',
-                          prefixIcon: Icon(Icons.vpn_key),
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _saveToken,
-                              icon: const Icon(Icons.save),
-                              label: const Text('Simpan'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepPurple,
-                                foregroundColor: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _hasToken ? _deleteToken : null,
-                              icon: const Icon(Icons.delete),
-                              label: const Text('Hapus'),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: _hasToken ? Colors.green[50] : Colors.red[50],
+                          color: _isLoggedIn
+                              ? Colors.green[50]
+                              : Colors.red[50],
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: _hasToken ? Colors.green : Colors.red,
+                            color: _isLoggedIn ? Colors.green : Colors.red,
                           ),
                         ),
                         child: Row(
                           children: [
                             Icon(
-                              _hasToken ? Icons.check_circle : Icons.cancel,
-                              color: _hasToken ? Colors.green : Colors.red,
+                              _isLoggedIn ? Icons.check_circle : Icons.cancel,
+                              color: _isLoggedIn ? Colors.green : Colors.red,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                _hasToken
-                                    ? 'Token tersimpan: ${_savedToken!}...'
-                                    : 'Belum ada token tersimpan',
+                                _isChecking
+                                    ? 'Memeriksa status login...'
+                                    : _isLoggedIn
+                                    ? 'Status: Sudah login (token tersimpan)'
+                                    : 'Status: Belum login',
                                 style: TextStyle(
-                                  color: _hasToken
+                                  color: _isLoggedIn
                                       ? Colors.green[800]
                                       : Colors.red[800],
                                   fontWeight: FontWeight.bold,
@@ -176,6 +128,25 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: _isLoggedIn
+                            ? OutlinedButton.icon(
+                                onPressed: _logout,
+                                icon: const Icon(Icons.logout),
+                                label: const Text('Logout'),
+                              )
+                            : ElevatedButton.icon(
+                                onPressed: _goToLogin,
+                                icon: const Icon(Icons.login),
+                                label: const Text('Login'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.deepPurple,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
                       ),
                     ],
                   ),
@@ -189,11 +160,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
-                          const Icon(Icons.cloud, color: Colors.blue),
-                          const SizedBox(width: 8),
-                          const Text(
+                          Icon(Icons.cloud, color: Colors.blue),
+                          SizedBox(width: 8),
+                          Text(
                             'HTTP Request',
                             style: TextStyle(
                               fontSize: 18,
@@ -254,7 +225,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 8),
                       const Text(
                         '1. Token dan PIN disimpan terenkripsi di secure storage.\n'
-                        '2. Jangan pernah mencetak token ke log.\n'
+                        '2. Jangan pernah mencetak token ke log atau menampilkannya di UI.\n'
                         '3. Gunakan HTTPS untuk komunikasi API.\n'
                         '4. Tangani error dengan pesan yang ramah pengguna.',
                         style: TextStyle(fontSize: 12),
