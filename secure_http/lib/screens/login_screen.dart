@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../services/secure_storage_service.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -48,8 +49,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
       _showMessage('Login berhasil', Colors.green);
-      // Kembali ke HomeScreen dengan hasil sukses
-      Navigator.pop(context, true);
+      // Ke HomeScreen dan hapus riwayat navigasi (agar tombol back
+      // tidak kembali ke halaman login)
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
     } catch (e) {
       if (!mounted) return;
       _showMessage(e.toString().replaceFirst('Exception: ', ''), Colors.red);

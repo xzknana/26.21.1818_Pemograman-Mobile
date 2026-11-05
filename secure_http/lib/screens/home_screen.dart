@@ -41,16 +41,40 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _logout() async {
+    // b) Konfirmasi sebelum logout
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Konfirmasi Logout'),
+        content: const Text('Apakah Anda yakin ingin keluar?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    // a) Hapus token dari secure storage
     await _storageService.deleteToken();
-    await _checkLoginStatus();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Logout berhasil, token dihapus'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-    }
+    if (!mounted) return;
+
+    // c) Kembali ke halaman login (hapus seluruh riwayat navigasi)
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   @override
