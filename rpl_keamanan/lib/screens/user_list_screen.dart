@@ -8,8 +8,8 @@ import '../widgets/user_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../repositories/user_repository.dart';
 import '../widgets/user_card.dart';
+import '../utils/logger.dart';
 
 /// Halaman untuk menampilkan daftar pengguna.
 ///
@@ -40,21 +40,37 @@ class _UserListScreenState extends State<UserListScreen> {
   }
 
   Future<void> _loadUsers() async {
+    Logger.debug('Memulai proses mengambil data pengguna');
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
+
     try {
       final users = await _repository.getUsers();
+
+      if (!mounted) return;
+
       setState(() {
         _users = users;
         _isLoading = false;
       });
-    } catch (e) {
+
+      Logger.info('Data pengguna berhasil dimuat: ${users.length} data');
+    } catch (e, stackTrace) {
+      if (!mounted) return;
+
       setState(() {
-        _errorMessage = e.toString();
+        _errorMessage = 'Gagal memuat data pengguna.';
         _isLoading = false;
       });
+
+      Logger.error(
+        'Gagal mengambil data pengguna',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 
