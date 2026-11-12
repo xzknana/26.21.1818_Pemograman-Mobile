@@ -4,6 +4,10 @@ import '../models/post.dart';
 import '../repositories/post_repository.dart';
 import '../repositories/post_repository_impl.dart';
 
+import 'package:provider/provider.dart';
+
+import '../repositories/post_repository.dart';
+
 class PostListScreen extends StatefulWidget {
   final PostRepository? repository;
 
@@ -11,6 +15,16 @@ class PostListScreen extends StatefulWidget {
 
   @override
   State<PostListScreen> createState() => _PostListScreenState();
+}
+
+class ApiService {
+  static final ApiService _instance = ApiService._internal();
+
+  factory ApiService() {
+    return _instance;
+  }
+
+  ApiService._internal();
 }
 
 class _PostListScreenState extends State<PostListScreen> {
@@ -23,7 +37,11 @@ class _PostListScreenState extends State<PostListScreen> {
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? PostRepositoryImpl();
+
+    _repository =
+        widget.repository ??
+        Provider.of<PostRepository>(context, listen: false);
+
     _loadPosts();
   }
 

@@ -5,12 +5,19 @@ import '../repositories/user_repository.dart';
 import '../repositories/user_repository_impl.dart';
 import '../widgets/user_card.dart';
 
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../repositories/user_repository.dart';
+import '../widgets/user_card.dart';
+
 /// Halaman untuk menampilkan daftar pengguna.
 ///
 /// Halaman ini menggunakan [UserRepository] untuk mengambil data,
 /// sehingga UI tidak bergantung langsung pada [ApiService].
 class UserListScreen extends StatefulWidget {
   final UserRepository? repository;
+
   const UserListScreen({super.key, this.repository});
   @override
   State<UserListScreen> createState() => _UserListScreenState();
@@ -24,7 +31,11 @@ class _UserListScreenState extends State<UserListScreen> {
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? UserRepositoryImpl();
+
+    _repository =
+        widget.repository ??
+        Provider.of<UserRepository>(context, listen: false);
+
     _loadUsers();
   }
 
