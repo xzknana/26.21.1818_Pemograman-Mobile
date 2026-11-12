@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import '../models/user.dart';
+import '../models/post.dart';
 
 /// Service untuk komunikasi HTTP dengan REST API.
 ///
@@ -17,6 +18,20 @@ class ApiService {
   ApiService({http.Client? client, String? baseUrl})
     : _client = client ?? http.Client(),
       _baseUrl = baseUrl ?? AppConfig.baseUrl;
+
+  Future<List<Post>> getPosts() async {
+    final url = Uri.parse('https://jsonplaceholder.typicode.com/posts');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+
+      return data.map((json) => Post.fromJson(json)).toList();
+    } else {
+      throw Exception('Gagal mengambil data Post: ${response.statusCode}');
+    }
+  }
 
   /// Mengambil daftar pengguna dari API.
   ///
